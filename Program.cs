@@ -40,8 +40,11 @@ internal sealed class Battery
 
 internal sealed class MonitorContext : ApplicationContext
 {
-    private const int MaxBatteries = 32;
+    private const int MaxBatteries = 128;
     private static readonly string SettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EcoWorthyCommunityEdition", "batteries.json");
+    private static readonly string WindowSettingsPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "EcoWorthyCommunityEdition", "windows.json");
+    private System.Drawing.Size selectionSize = new(420, 460);
+    private System.Drawing.Size hoverSize = new(250, 265);
     private static readonly Guid ServiceId = Guid.Parse("0000fff0-0000-1000-8000-00805f9b34fb");
     private static readonly Guid DataId = Guid.Parse("0000fff1-0000-1000-8000-00805f9b34fb");
     private static readonly TimeSpan Freshness = TimeSpan.FromSeconds(45);
@@ -64,7 +67,10 @@ internal sealed class MonitorContext : ApplicationContext
     public MonitorContext()
     {
         LoadSettings();
+        LoadWindowSizes();
         panel = new HoverPanel();
+        panel.Size = ClampSize(hoverSize, panel.MinimumSize, Screen.PrimaryScreen?.WorkingArea.Size ?? new System.Drawing.Size(1280, 720));
+        panel.ResizeEnd += (_, _) => { hoverSize = panel.Size; SaveWindowSizes(); };
         tray = new NotifyIcon { Visible = false, Text = "ECO-WORTHY: discovering batteries" };
         var menu = new ContextMenuStrip();
         menu.Items.Add("Show battery levels", null, (_, _) => ShowPanel());
@@ -198,6 +204,7 @@ internal sealed class MonitorContext : ApplicationContext
                 if (status != GattCommunicationStatus.Success) throw new Exception("Notification subscription failed");
                 subscribed = true;
                 SetStatus(id, "Waiting for data");
+                var connectedAtUtc = DateTime.UtcNow;
                 // If notifications stop, close and reconnect; no cached SOC is treated as current.
                 while (!ct.IsCancellationRequested && !paused && version == sessionVersion)
                 {
@@ -205,7 +212,7 @@ internal sealed class MonitorContext : ApplicationContext
                     DateTime seen;
                     lock (gate) seen = batteries[id].LastSeenUtc;
                     if (seen != default && DateTime.UtcNow - seen > Freshness) break;
-                    if (seen == default && device.ConnectionStatus != BluetoothConnectionStatus.Connected) break;
+                    if (seen == default && (device.ConnectionStatus != BluetoothConnectionStatus.Connected || DateTime.UtcNow - connectedAtUtc > TimeSpan.FromSeconds(40))) break;
                 }
             }
             catch (OperationCanceledException) { break; }
@@ -323,9 +330,12 @@ using var bg = new SolidBrush(background);
         if (!paused) TogglePause();
         List<string> ids;
         lock (gate) ids = batteries.Keys.OrderBy(x => x).ToList();
-        using var dialog = new Form { Text = "Choose ECO-WORTHY batteries", ClientSize = new System.Drawing.Size(420, 460),
-            StartPosition = FormStartPosition.CenterScreen, FormBorderStyle = FormBorderStyle.FixedDialog,
-            MaximizeBox = false, MinimizeBox = false, TopMost = true, AutoScaleMode = AutoScaleMode.Dpi };
+        using var dialog = new Form { Text = "Choose ECO-WORTHY batteries",
+            StartPosition = FormStartPosition.CenterScreen, FormBorderStyle = FormBorderStyle.Sizable,
+            MaximizeBox = true, MinimizeBox = false, TopMost = true, AutoScaleMode = AutoScaleMode.Dpi,
+            MinimumSize = new System.Drawing.Size(350, 300) };
+        dialog.Size = ClampSize(selectionSize, dialog.MinimumSize, Screen.PrimaryScreen?.WorkingArea.Size ?? new System.Drawing.Size(1280, 720));
+        dialog.ResizeEnd += (_, _) => { if (dialog.WindowState == FormWindowState.Normal) { selectionSize = dialog.Size; SaveWindowSizes(); } };
         var hint = new Label { Dock = DockStyle.Top, Height = 85, Padding = new Padding(12),
             Text = "Select batteries to include in the bank average. New devices are discovered while monitoring is running. Close and reopen this window to see new devices." };
         var checks = new CheckedListBox { Dock = DockStyle.Fill, CheckOnClick = true };
@@ -352,7 +362,40 @@ using var bg = new SolidBrush(background);
             }
             SaveSettings();
         }
+        if (dialog.WindowState == FormWindowState.Normal) { selectionSize = dialog.Size; SaveWindowSizes(); }
         if (paused) TogglePause();
+    }
+
+    private static System.Drawing.Size ClampSize(System.Drawing.Size requested, System.Drawing.Size minimum, System.Drawing.Size available)
+    {
+        int width = Math.Min(Math.Max(requested.Width, minimum.Width), Math.Max(minimum.Width, available.Width));
+        int height = Math.Min(Math.Max(requested.Height, minimum.Height), Math.Max(minimum.Height, available.Height));
+        return new System.Drawing.Size(width, height);
+    }
+
+    private void LoadWindowSizes()
+    {
+        try
+        {
+            if (!File.Exists(WindowSettingsPath)) return;
+            var sizes = JsonSerializer.Deserialize<int[]>(File.ReadAllText(WindowSettingsPath));
+            if (sizes?.Length == 4)
+            {
+                if (sizes[0] > 0 && sizes[1] > 0) selectionSize = new System.Drawing.Size(sizes[0], sizes[1]);
+                if (sizes[2] > 0 && sizes[3] > 0) hoverSize = new System.Drawing.Size(sizes[2], sizes[3]);
+            }
+        }
+        catch { /* Invalid size settings: use safe defaults. */ }
+    }
+
+    private void SaveWindowSizes()
+    {
+        try
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(WindowSettingsPath)!);
+            File.WriteAllText(WindowSettingsPath, JsonSerializer.Serialize(new[] { selectionSize.Width, selectionSize.Height, hoverSize.Width, hoverSize.Height }));
+        }
+        catch { /* Size preferences are optional. */ }
     }
 
     private void LoadSettings()
@@ -416,15 +459,20 @@ internal sealed class HoverPanel : Form
     private readonly Label content;
     public HoverPanel()
     {
-        FormBorderStyle = FormBorderStyle.FixedSingle;
+        FormBorderStyle = FormBorderStyle.SizableToolWindow;
+        MinimumSize = new System.Drawing.Size(220, 180);
         ShowInTaskbar = false;
         StartPosition = FormStartPosition.Manual;
         TopMost = true;
         Width = 250;
         Height = 265;
         BackColor = Color.FromArgb(32, 34, 37);
-        content = new Label { Dock = DockStyle.Fill, ForeColor = Color.White, Font = new Font("Consolas", 10), Padding = new Padding(12), AutoSize = false };
-        Controls.Add(content);
+        content = new Label { Dock = DockStyle.Fill, ForeColor = Color.White, Font = new Font("Consolas", 10), Padding = new Padding(12), AutoSize = true };
+        var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = BackColor };
+        content.Dock = DockStyle.Top;
+        scroll.Controls.Add(content);
+        Controls.Add(scroll);
+        return;
     }
     protected override bool ShowWithoutActivation => true;
     protected override CreateParams CreateParams
