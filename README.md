@@ -72,10 +72,13 @@ The application does not require an internet connection, account registration, o
 5. Click **Save and resume** to begin monitoring.
 6. Wait for the selected batteries to report their SOC percentages.
 7. The overall bank percentage will appear in the Windows system tray once all selected batteries have fresh readings.
+8. If the percentage icon is hidden, click the ^ arrow near the Windows clock and drag the ECO-WORTHY icon onto the taskbar beside the clock. Windows normally remembers this preference, so you should only need to do this once.
 
 To change your selection later, right-click the tray icon and choose **Choose batteries...**
 
 The selection screen intentionally pauses Bluetooth monitoring while you make changes.
+
+**Note:** Windows controls which notification icons remain visible on the taskbar. The application cannot automatically override these settings.
 
 ### If no batteries appear
 
