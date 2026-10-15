@@ -56,8 +56,8 @@ The downloadable self-contained Windows build does not require users to install 
 ## Installation
 
 1. Visit the project's GitHub **Releases** page.
-2. Download the latest Windows executable ZIP.
-3. Extract the ZIP to a folder of your choice.
+2. Download `EcoWorthyCommunityEdition.exe` from the latest release.
+3. Save it to a folder of your choice.
 4. Run `EcoWorthyCommunityEdition.exe`.
 5. If the application does not appear immediately, check the system tray near the Windows clock, including the hidden icons menu (`^`).
 
@@ -160,7 +160,7 @@ This is informational software, **not a safety or battery-protection device**. T
 
 ## Development and testing status
 
-**Community Edition — initial release candidate**
+**Community Edition — v1.0.0**
 
 Successfully compiled and tested on a Windows computer with eight compatible ECO-WORTHY Bluetooth batteries.
 
@@ -168,21 +168,17 @@ Core functionality has been verified, including automatic discovery, battery sel
 
 Additional testing with other battery models, Windows computers, Bluetooth adapters, and larger battery banks is welcome.
 
-## Contributing and feedback
+## Project status — shared as-is
 
-Feedback from other ECO-WORTHY battery owners is welcome, particularly regarding:
+I created this application for my own use and am sharing it freely in case others find it useful.
 
-- Compatible and incompatible battery models
-- Performance with larger battery banks
-- Bluetooth connection reliability
-- Windows and Bluetooth adapter compatibility
-- Bugs or unexpected behavior
+This project is provided **as-is**, without any commitment to ongoing development, maintenance, updates, troubleshooting, or technical support. I do not plan to actively maintain this repository or respond to support requests.
 
-Please use the GitHub **Issues** section to report problems or suggest improvements.
+You are welcome to use, modify, improve, fork, or redistribute the project under the MIT License. Anyone interested in developing it further is welcome to do so independently.
 
-When reporting an issue, include your Windows version, battery model, number of batteries, and a description of the problem.
+## AI assistance disclosure
 
-**Please avoid posting private Bluetooth addresses, serial numbers, or other sensitive information in public issue reports.**
+This software was developed with the assistance of AI tools, including help with writing, reviewing, and refining code and documentation. The application was also tested with a real eight-battery setup, as described above. AI assistance does not guarantee that the software is free of bugs or compatible with other hardware.
 
 ## Disclaimer
 
