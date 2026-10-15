@@ -336,7 +336,7 @@ using var bg = new SolidBrush(background);
             MinimumSize = new System.Drawing.Size(350, 300) };
         dialog.Size = ClampSize(selectionSize, dialog.MinimumSize, Screen.PrimaryScreen?.WorkingArea.Size ?? new System.Drawing.Size(1280, 720));
         dialog.ResizeEnd += (_, _) => { if (dialog.WindowState == FormWindowState.Normal) { selectionSize = dialog.Size; SaveWindowSizes(); } };
-        var hint = new Label { Dock = DockStyle.Top, Height = 85, Padding = new Padding(12),
+        var hint = new Label { Dock = DockStyle.Top, Height = 100, Padding = new Padding(12), AutoEllipsis = false,
             Text = "Select batteries to include in the bank average. New devices are discovered while monitoring is running. Close and reopen this window to see new devices." };
         var checks = new CheckedListBox { Dock = DockStyle.Fill, CheckOnClick = true };
         foreach (var id in ids) checks.Items.Add("OB_" + id, selectedIds.Contains(id));
@@ -346,7 +346,7 @@ using var bg = new SolidBrush(background);
         buttons.Controls.Add(save); buttons.Controls.Add(cancel);
         dialog.Controls.Add(checks); dialog.Controls.Add(hint); dialog.Controls.Add(buttons);
         dialog.AcceptButton = save; dialog.CancelButton = cancel;
-        dialog.Shown += (_, _) => dialog.Activate();
+        dialog.Shown += (_, _) => { dialog.BringToFront(); dialog.Activate(); };
         if (dialog.ShowDialog() == DialogResult.OK)
         {
             lock (gate)
@@ -456,7 +456,7 @@ using var bg = new SolidBrush(background);
 
 internal sealed class HoverPanel : Form
 {
-    private readonly Label content;
+    private readonly TextBox content;
     public HoverPanel()
     {
         FormBorderStyle = FormBorderStyle.SizableToolWindow;
@@ -467,10 +467,22 @@ internal sealed class HoverPanel : Form
         Width = 250;
         Height = 265;
         BackColor = Color.FromArgb(32, 34, 37);
-        content = new Label { Dock = DockStyle.Top, ForeColor = Color.White, Font = new Font("Consolas", 10), Padding = new Padding(12), AutoSize = true };
-        var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = BackColor };
-        scroll.Controls.Add(content);
-        Controls.Add(scroll);
+        content = new TextBox
+        {
+            Dock = DockStyle.Fill,
+            Multiline = true,
+            ReadOnly = true,
+            WordWrap = true,
+            ScrollBars = ScrollBars.Vertical,
+            BorderStyle = BorderStyle.None,
+            BackColor = BackColor,
+            ForeColor = Color.White,
+            Font = new Font("Consolas", 10),
+            TabStop = false
+        };
+        var padding = new Panel { Dock = DockStyle.Fill, Padding = new Padding(12), BackColor = BackColor };
+        padding.Controls.Add(content);
+        Controls.Add(padding);
     }
     protected override bool ShowWithoutActivation => true;
     protected override CreateParams CreateParams
@@ -480,7 +492,7 @@ internal sealed class HoverPanel : Form
     public void UpdateContent(string heading, List<string> lines)
     {
         content.Text = heading + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, lines);
-        content.MinimumSize = new System.Drawing.Size(Math.Max(160, ClientSize.Width - 28), 0);
+
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
