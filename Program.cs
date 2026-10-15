@@ -323,7 +323,7 @@ using var bg = new SolidBrush(background);
         if (!paused) TogglePause();
         List<string> ids;
         lock (gate) ids = batteries.Keys.OrderBy(x => x).ToList();
-        using var dialog = new Form { Text = "Choose ECO-WORTHY batteries", ClientSize = new Size(450, 500),
+        using var dialog = new Form { Text = "Choose ECO-WORTHY batteries", ClientSize = new System.Drawing.Size(420, 460),
             StartPosition = FormStartPosition.CenterScreen, FormBorderStyle = FormBorderStyle.FixedDialog,
             MaximizeBox = false, MinimizeBox = false, TopMost = true, AutoScaleMode = AutoScaleMode.Dpi };
         var hint = new Label { Dock = DockStyle.Top, Height = 85, Padding = new Padding(12),
