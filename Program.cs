@@ -467,12 +467,10 @@ internal sealed class HoverPanel : Form
         Width = 250;
         Height = 265;
         BackColor = Color.FromArgb(32, 34, 37);
-        content = new Label { Dock = DockStyle.Fill, ForeColor = Color.White, Font = new Font("Consolas", 10), Padding = new Padding(12), AutoSize = true };
+        content = new Label { Dock = DockStyle.Top, ForeColor = Color.White, Font = new Font("Consolas", 10), Padding = new Padding(12), AutoSize = true };
         var scroll = new Panel { Dock = DockStyle.Fill, AutoScroll = true, BackColor = BackColor };
-        content.Dock = DockStyle.Top;
         scroll.Controls.Add(content);
         Controls.Add(scroll);
-        return;
     }
     protected override bool ShowWithoutActivation => true;
     protected override CreateParams CreateParams
@@ -482,6 +480,7 @@ internal sealed class HoverPanel : Form
     public void UpdateContent(string heading, List<string> lines)
     {
         content.Text = heading + Environment.NewLine + Environment.NewLine + string.Join(Environment.NewLine, lines);
+        content.MinimumSize = new System.Drawing.Size(Math.Max(160, ClientSize.Width - 28), 0);
     }
 
     protected override void OnFormClosing(FormClosingEventArgs e)
